@@ -64,7 +64,7 @@ export default function RevenueRecoveryPage() {
            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center relative z-10">
               <div className="space-y-8">
                  <h2 className="text-5xl font-black text-white italic uppercase tracking-tighter leading-[0.9]">Smart_Dunning<br/><span className="text-purple-600">Protocol v4.0</span></h2>
-                 <p className="text-xl text-slate-400 font-medium">Auto-sync with card bin databases and regional bank downtime calendars. We don't just retry; we wait for the perfect moment.</p>
+                 <p className="text-xl text-slate-400 font-medium">Auto-sync with card bin databases and regional bank downtime calendars. We don&apos;t just retry; we wait for the perfect moment.</p>
                  <div className="grid grid-cols-2 gap-4">
                     {[
                       { label: 'Bin-logic retries', status: 'Active' },

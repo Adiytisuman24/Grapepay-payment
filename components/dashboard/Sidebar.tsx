@@ -37,7 +37,8 @@ import {
   LayoutGrid,
   Plus,
   Info,
-  ExternalLink
+  ExternalLink,
+  Sparkles
 } from 'lucide-react';
 
 const mainNavigation = [
@@ -78,7 +79,7 @@ const developerNavigation = [
 
 const shortcutsNavigation = [
   { name: 'Workflows', href: '/workflows', icon: Activity },
-  { name: 'Connect overview', href: '/connect', icon: Globe },
+  { name: 'AI CA', href: '/ai-ca', icon: Sparkles },
   { name: 'Tax', href: '/tax', icon: Receipt },
 ];
 
@@ -105,6 +106,7 @@ const productsNavigation = [
       { name: 'Radar', href: '/payments/radar' },
       { name: 'Payment Links', href: '/payments/links' },
       { name: 'Terminal', href: '/payments/terminal' },
+      { name: 'Neobanking', href: '/payments/neobanking', badge: 'New' },
     ]
   },
   { 
@@ -114,7 +116,7 @@ const productsNavigation = [
       { name: 'Overview', href: '/billing/overview' },
       { name: 'Subscriptions', href: '/billing/subscriptions' },
       { name: 'Invoices', href: '/billing/invoices' },
-      { name: 'Usage-based', href: '/billing/usage' },
+      { name: 'Billing', href: '/billing/usage' },
       { name: 'Revenue recovery', href: '/billing/revenue-recovery' },
     ]
   },
@@ -133,10 +135,11 @@ const productsNavigation = [
     name: 'More',
     icon: LayoutGrid,
     subItems: [
-      { name: 'Tax', href: '/more/tax' },
-      { name: 'Identity', href: '/more/identity' },
-      { name: 'Atlas', href: '/more/atlas' },
-      { name: 'Financial Connections', href: '/more/financial-connections' },
+      { name: 'Tax', href: '/tax' },
+      { name: 'Profile', href: '/profiles' },
+      { name: 'Identity', href: '/identity' },
+      { name: 'Inc.', href: '/inco-operation' },
+      { name: 'Financial Connections', href: '/financial-connections' },
     ]
   }
 ];

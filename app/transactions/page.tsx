@@ -133,68 +133,20 @@ export default function TransactionsPage() {
                </div>
             </div>
 
-            <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
-               <div className="overflow-x-auto">
-                 <table className="w-full text-left border-collapse">
-                    <thead>
-                       <tr className="bg-white border-b border-slate-200">
-                          <th className="px-4 py-4 w-10"><div className="h-4 w-4 rounded-[4px] border border-slate-300" /></th>
-                          <th className="px-4 py-4 text-[11px] font-bold text-slate-900 uppercase tracking-wider">Amount</th>
-                          <th className="px-4 py-4 text-[11px] font-bold text-slate-900 uppercase tracking-wider">Payment method</th>
-                          <th className="px-4 py-4 text-[11px] font-bold text-slate-900 uppercase tracking-wider">Description</th>
-                          <th className="px-4 py-4 text-[11px] font-bold text-slate-900 uppercase tracking-wider">Customer</th>
-                          <th className="px-4 py-4 text-[11px] font-bold text-slate-900 uppercase tracking-wider">Date</th>
-                          <th className="px-4 py-4 text-[11px] font-bold text-slate-900 uppercase tracking-wider">Settlement merchant</th>
-                          <th className="px-4 py-4 text-[11px] font-bold text-slate-900 uppercase tracking-wider">Transferred to</th>
-                          <th className="px-4 py-4 text-[11px] font-bold text-slate-900 uppercase tracking-wider">Refunded date</th>
-                          <th className="px-4 py-4"></th>
-                       </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                       {[
-                         { id: 'pi_3SagMMDcLq3VFmkC31VijvxA', time: '11:00 PM' },
-                         { id: 'pi_3SagLuDcLq3VFmkC0g9XF0wE', time: '11:00 PM' },
-                         { id: 'pi_3SagKqDcLq3VFmkC1oK5fgV3', time: '10:58 PM' },
-                         { id: 'pi_3SagKoDcLq3VFmkC0GoeZCIx', time: '10:58 PM' },
-                         { id: 'pi_3SagKRDcLq3VFmkC1YcsFb29', time: '10:58 PM' },
-                         { id: 'pi_3SagJfDcLq3VFmkC1K73nDsd', time: '10:57 PM' },
-                       ].map((tx, idx) => (
-                          <tr key={tx.id} className="hover:bg-slate-50 group cursor-pointer text-[13px] transition-colors">
-                             <td className="px-4 py-4"><div className="h-4 w-4 rounded-[4px] border border-slate-300 group-hover:border-purple-300 transition-colors" /></td>
-                             <td className="px-4 py-4 whitespace-nowrap">
-                                <div className="flex items-center gap-2">
-                                   <span className="font-bold text-slate-900">{currency === 'INR' ? '₹' : currency} 500.00</span>
-                                   <span className="text-[11px] font-bold text-slate-400">{currency}</span>
-                                   <div className="flex items-center gap-1.5 px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded text-[11px] font-bold border border-slate-200">
-                                      Incomplete <Info size={12} className="text-slate-400" />
-                                   </div>
-                                </div>
-                             </td>
-                             <td className="px-4 py-4 text-slate-400 font-bold">—</td>
-                             <td className="px-4 py-4">
-                                <span className="text-slate-600 font-mono text-[11px] font-medium tracking-tight bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">{tx.id}</span>
-                             </td>
-                             <td className="px-4 py-4 text-slate-400 font-bold">—</td>
-                             <td className="px-4 py-4 text-slate-600 font-bold whitespace-nowrap">Dec 4, {tx.time}</td>
-                             <td className="px-4 py-4 text-slate-600 font-bold">{businessName}</td>
-                             <td className="px-4 py-4 text-slate-400 font-bold">—</td>
-                             <td className="px-4 py-4 text-slate-400 font-bold">—</td>
-                             <td className="px-4 py-4 text-right">
-                                <MoreHorizontal size={14} className="text-slate-300 opacity-0 group-hover:opacity-100 inline-block transition-opacity" />
-                             </td>
-                          </tr>
-                       ))}
-                    </tbody>
-                 </table>
-               </div>
-            </div>
-            <div className="flex items-center justify-between mt-4">
-               <p className="text-[12px] font-bold text-slate-500">Viewing 1–20 of 23 items</p>
-               <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" className="h-8 text-[12px] font-bold text-slate-400 bg-slate-50/50 border-slate-200" disabled>Previous</Button>
-                  <Button variant="outline" size="sm" className="h-8 text-[12px] font-bold text-slate-900 bg-white border-slate-200">Next</Button>
-               </div>
-            </div>
+          <div className="flex flex-col items-center justify-center py-24 space-y-4">
+             <div className="h-12 w-12 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100 shadow-sm">
+                <Search size={24} className="text-slate-400" />
+             </div>
+             <div className="text-center space-y-1">
+                <h3 className="text-[15px] font-bold text-slate-900 tracking-tight">No payments found</h3>
+                <p className="text-[13px] text-slate-500 font-medium tracking-tight">
+                   You have no payments yet.
+                </p>
+             </div>
+             <Button className="bg-[#635bff] hover:bg-[#5249e0] font-bold text-sm h-9 px-4 rounded-lg mt-4 shadow-lg shadow-purple-600/20">
+                <Plus size={16} className="mr-2" /> Create payment
+             </Button>
+          </div>
           </div>
         );
       case 'all':
@@ -213,37 +165,17 @@ export default function TransactionsPage() {
                ))}
             </div>
 
-            <div className="border border-slate-200 rounded-lg overflow-hidden bg-white shadow-sm">
-               <table className="w-full text-left">
-                  <thead>
-                     <tr className="bg-white border-b border-slate-200">
-                        <th className="px-4 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Amount</th>
-                        <th className="px-4 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Fees</th>
-                        <th className="px-4 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total</th>
-                        <th className="px-4 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Type</th>
-                        <th className="px-4 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Description</th>
-                        <th className="px-4 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-right">Created</th>
-                        <th className="px-4 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-right">Available on</th>
-                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                     <tr className="hover:bg-slate-50 group cursor-pointer text-[13px] transition-colors">
-                        <td className="px-4 py-4 font-bold text-slate-900">-{currency} 330.00</td>
-                        <td className="px-4 py-4 text-slate-500">-{currency} 16.50</td>
-                        <td className="px-4 py-4 text-slate-900 font-bold">-{currency} 346.50</td>
-                        <td className="px-4 py-4">
-                           <span className="text-slate-600 font-bold">Grapepay fee</span>
-                        </td>
-                        <td className="px-4 py-4 text-slate-600 font-medium truncate max-w-[300px]">
-                           Tax Product Subscription ({currentYear + 1}-11-10 - {currentYear + 2}-12-09)
-                        </td>
-                        <td className="px-4 py-4 text-slate-600 font-bold text-right whitespace-nowrap">Nov 10</td>
-                        <td className="px-4 py-4 text-slate-600 font-bold text-right whitespace-nowrap">Nov 10</td>
-                     </tr>
-                  </tbody>
-               </table>
-            </div>
-            <p className="text-[12px] font-bold text-slate-400">1 item</p>
+          <div className="flex flex-col items-center justify-center py-24 space-y-4">
+             <div className="h-12 w-12 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100 shadow-sm">
+                <Search size={24} className="text-slate-400" />
+             </div>
+             <div className="text-center space-y-1">
+                <h3 className="text-[15px] font-bold text-slate-900 tracking-tight">No activity found</h3>
+                <p className="text-[13px] text-slate-500 font-medium tracking-tight">
+                   Activity will show up here.
+                </p>
+             </div>
+          </div>
           </div>
         );
       case 'payouts':

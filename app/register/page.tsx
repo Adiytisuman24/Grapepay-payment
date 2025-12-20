@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Eye, EyeOff, Check, X } from 'lucide-react';
+import { Eye, EyeOff, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { COUNTRIES_AND_CURRENCIES } from '@/lib/currencies';
 
@@ -22,10 +22,7 @@ export default function RegisterPage() {
     region: 'United States of America',
     acceptTerms: false
   });
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [passwordStrength, setPasswordStrength] = useState(0);
   const router = useRouter();
 
   const countries = COUNTRIES_AND_CURRENCIES.map(c => ({
@@ -33,20 +30,8 @@ export default function RegisterPage() {
     label: c.country
   }));
 
-  const calculatePasswordStrength = (password: string) => {
-    let strength = 0;
-    if (password.length >= 8) strength += 1;
-    if (/[A-Z]/.test(password)) strength += 1;
-    if (/[0-9]/.test(password)) strength += 1;
-    if (/[^A-Za-z0-9]/.test(password)) strength += 1;
-    return strength;
-  };
-
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    if (field === 'password') {
-      setPasswordStrength(calculatePasswordStrength(value as string));
-    }
   };
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -54,8 +39,15 @@ export default function RegisterPage() {
     setIsLoading(true);
     try {
       const allUsers = JSON.parse(localStorage.getItem('grapepay_all_users') || '[]');
-      const usernameExists = allUsers.some((u: any) => u.username === formData.username);
+      
+      const emailExists = allUsers.some((u: any) => u.email === formData.email);
+      if (emailExists) {
+        toast.error('This email is already registered. Please sign in or use a different email.');
+        setIsLoading(false);
+        return;
+      }
 
+      const usernameExists = allUsers.some((u: any) => u.username === formData.username);
       if (usernameExists) {
         toast.error('Username already taken. Please create another username.');
         setIsLoading(false);
@@ -79,13 +71,10 @@ export default function RegisterPage() {
         kyc_status: 'pending'
       };
 
-      // Store in simple global user list
       allUsers.push(newUser);
       localStorage.setItem('grapepay_all_users', JSON.stringify(allUsers));
-      
       localStorage.setItem('grapepay_user', JSON.stringify(newUser));
       
-      // Record session
       const sessions = JSON.parse(localStorage.getItem('grapepay_sessions') || '[]');
       sessions.unshift({
         location: 'India (KA)',
@@ -105,31 +94,13 @@ export default function RegisterPage() {
   };
 
   const handleGoogleSignUp = () => {
-    toast.info('Google Sign Up initialized...');
+    setIsLoading(true);
+    toast.info('Connecting to Google Registration Services...');
+    
     setTimeout(() => {
-      const demoUser = {
-        id: "grape-googleventures" + Math.random().toString(36).substring(2, 11),
-        email: 'google-new@grapepay.com',
-        role: 'merchant',
-        name: 'New Google User',
-        business_name: 'Google Ventures',
-        kyc_status: 'pending'
-      };
-      localStorage.setItem('grapepay_user', JSON.stringify(demoUser));
-
-      // Record session
-      const sessions = JSON.parse(localStorage.getItem('grapepay_sessions') || '[]');
-      sessions.unshift({
-        location: 'India (KA)',
-        device: 'Edge - Windows',
-        ip: '103.214.63.' + Math.floor(Math.random() * 255),
-        time: 'Just now',
-        status: 'Current session'
-      });
-      localStorage.setItem('grapepay_sessions', JSON.stringify(sessions.slice(0, 50)));
-      toast.success('Signed up with Google!');
-      router.push('/');
-    }, 1500);
+      setIsLoading(false);
+      toast.error('Google Auth Server is currently down. Please retry after a while or use your email address to sign up.');
+    }, 2000);
   };
 
   return (

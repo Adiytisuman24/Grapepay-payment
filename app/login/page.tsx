@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
-import { authenticate, setCurrentUser } from '@/lib/auth';
+import { authenticate, setCurrentUser, findUserByEmail } from '@/lib/auth';
 
 export default function LoginPage() {
   const [identifier, setIdentifier] = useState('');
@@ -60,32 +60,13 @@ export default function LoginPage() {
   };
 
   const handleGoogleSignIn = () => {
-    toast.info('Google Sign In is being initialized...');
-    // Simulated Google Auth flow
+    setIsLoading(true);
+    toast.info('Connecting to Google Authentication Services...');
+    
     setTimeout(() => {
-      const demoUser = {
-        id: ('grape-googleventures' + Math.random().toString(36).substring(2, 11)).padEnd(30, '0').substring(0, 30),
-        email: 'google@grapepay.com',
-        role: 'merchant',
-        name: 'Google User',
-        business_name: 'Google Ventures',
-        kyc_status: 'pending'
-      };
-      localStorage.setItem('grapepay_user', JSON.stringify(demoUser));
-
-      // Record session
-      const sessions = JSON.parse(localStorage.getItem('grapepay_sessions') || '[]');
-      sessions.unshift({
-        location: 'India (KA)',
-        device: 'Edge - Windows',
-        ip: '103.214.63.' + Math.floor(Math.random() * 255),
-        time: 'Just now',
-        status: 'Current session'
-      });
-      localStorage.setItem('grapepay_sessions', JSON.stringify(sessions.slice(0, 50)));
-      toast.success('Signed in with Google!');
-      router.push('/');
-    }, 1500);
+      setIsLoading(false);
+      toast.error('Google Auth Server is currently down. Please retry after a while or use your email address to sign in.');
+    }, 2000);
   };
 
   return (

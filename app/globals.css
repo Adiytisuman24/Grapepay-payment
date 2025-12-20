@@ -77,3 +77,37 @@
 .Grapepay-badge {
   @apply px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider;
 }
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #cbd5e1;
+}
+
+@keyframes alive {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+
+.animate-alive {
+  animation: alive 4s ease-in-out infinite;
+}
+
+.docs-gradient {
+  background: radial-gradient(circle at 50% 50%, rgba(99, 91, 255, 0.03) 0%, transparent 50%);
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}

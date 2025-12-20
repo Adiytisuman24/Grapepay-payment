@@ -4,46 +4,35 @@ import { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { 
   Plus, 
-  HelpCircle, 
-  Settings, 
-  ChevronRight, 
-  X, 
-  Download, 
   BarChart3, 
   ShoppingBag, 
-  PlusCircle, 
-  Calendar,
-  Filter,
-  ArrowRight,
-  Package,
   Layers,
-  ChevronDown,
-  Info
+  Info,
+  Package
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 export default function ProductsPage() {
   const [activeTab, setActiveTab] = useState('all-products');
-  const [data, setData] = useState({ products: [], features: [], coupons: [] });
+  const [data, setData] = useState<any>({ products: [], features: [], coupons: [] });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Mock data simulation - replacing failed localhost fetches
     const fetchData = async () => {
       try {
-        const [prodRes, featRes, cpnRes] = await Promise.all([
-          fetch('http://localhost:3001/api/products'),
-          fetch('http://localhost:3001/api/features'),
-          fetch('http://localhost:3001/api/coupons')
-        ]);
+        setLoading(true);
+        // Simulating network delay
+        await new Promise(resolve => setTimeout(resolve, 800));
         
-        const products = await prodRes.json();
-        const features = await featRes.json();
-        const coupons = await cpnRes.json();
-        
-        setData({ products, features, coupons });
+        setData({
+          products: [],
+          features: [],
+          coupons: []
+        });
       } catch (err) {
-        console.error('Failed to fetch catalog data:', err);
+        console.error('Failed to load catalog data:', err);
       } finally {
         setLoading(false);
       }
@@ -74,8 +63,8 @@ export default function ProductsPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                {[
                  { label: 'All', count: data.products.length },
-                 { label: 'Active', count: data.products.filter(p => p.status === 'active').length, active: true },
-                 { label: 'Archived', count: data.products.filter(p => p.status === 'archived').length },
+                 { label: 'Active', count: data.products.filter((p: any) => p.status === 'active').length, active: true },
+                 { label: 'Archived', count: data.products.filter((p: any) => p.status === 'archived').length },
                ].map(card => (
                   <div 
                     key={card.label}
@@ -102,7 +91,7 @@ export default function ProductsPage() {
                         </tr>
                      </thead>
                      <tbody className="divide-y divide-slate-100">
-                        {data.products.map(product => (
+                        {data.products.map((product: any) => (
                            <tr key={product.id} className="hover:bg-slate-50 cursor-pointer">
                               <td className="px-6 py-4">
                                  <p className="text-[14px] font-bold text-slate-900">{product.name}</p>
@@ -143,8 +132,8 @@ export default function ProductsPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                {[
                  { label: 'All features', count: data.features.length },
-                 { label: 'Active', count: data.features.filter(f => f.status === 'active').length, active: true },
-                 { label: 'Archived', count: data.features.filter(f => f.status === 'archived').length },
+                 { label: 'Active', count: data.features.filter((f: any) => f.status === 'active').length, active: true },
+                 { label: 'Archived', count: data.features.filter((f: any) => f.status === 'archived').length },
                ].map(card => (
                   <div 
                     key={card.label}
@@ -171,7 +160,7 @@ export default function ProductsPage() {
                         </tr>
                      </thead>
                      <tbody className="divide-y divide-slate-100">
-                        {data.features.map(feat => (
+                        {data.features.map((feat: any) => (
                            <tr key={feat.id} className="hover:bg-slate-50 cursor-pointer">
                               <td className="px-6 py-4">
                                  <p className="text-[14px] font-bold text-slate-900">{feat.name}</p>

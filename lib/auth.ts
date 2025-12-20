@@ -30,6 +30,13 @@ const mockUsers: User[] = [
   }
 ];
 
+export const findUserByEmail = (email: string): User | null => {
+  if (typeof window === 'undefined') return null;
+  const persistedUsers = JSON.parse(localStorage.getItem('grapepay_all_users') || '[]');
+  const allUsers = [...mockUsers, ...persistedUsers];
+  return allUsers.find(u => u.email === email) || null;
+};
+
 export const authenticate = (identifier: string, password: string): User | null => {
   if (typeof window === 'undefined') return null;
   
