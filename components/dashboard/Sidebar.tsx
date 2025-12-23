@@ -56,10 +56,10 @@ const developerNavigation = [
     isHeader: true,
     items: [
       { name: 'Overview', href: '/developers' },
+      { name: 'Real-time Events', href: '/developers/notifications', badge: 'Live' },
       { name: 'Webhooks', href: '/developers/webhooks' },
       { name: 'Events', href: '/developers/events' },
       { name: 'Logs', href: '/developers/logs' },
-      { name: 'More', href: '#', hasMore: true },
     ]
   },
   {
@@ -81,6 +81,8 @@ const shortcutsNavigation = [
   { name: 'Workflows', href: '/workflows', icon: Activity },
   { name: 'AI CA', href: '/ai-ca', icon: Sparkles },
   { name: 'Tax', href: '/tax', icon: Receipt },
+  { name: 'Test Payment', href: '/test-payment', icon: CreditCard },
+  { name: 'Payment History', href: '/payment-history', icon: Receipt },
 ];
 
 const productsNavigation = [

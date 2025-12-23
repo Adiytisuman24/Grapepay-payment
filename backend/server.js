@@ -10,182 +10,202 @@ app.use(express.json());
 
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
+  cors: { origin: "*", methods: ["GET", "POST"] }
 });
 
 const PORT = 3001;
 
-// --- GLOBAL SYSTEM STATE ---
-let transactions = [
-    {
-        id: 'TXN-88127',
-        hash: '0x71c...42e1',
-        type: 'convert',
-        fromAmount: 1.5,
-        fromCurrency: 'ETH',
-        toAmount: 428000.50,
-        toCurrency: 'INR',
-        status: 'success',
-        timestamp: new Date().toISOString(),
-        fee: 3.50,
-        chain: 'Ethereum',
-        merchant: 'Aditya Suman'
-    }
+// --- 1. IMMUTABLE EVENT STORE (The Fact Log) ---
+const EVENT_LOG = []; 
+
+// --- 2. NOTIFICATION QUEUE (Simulating SQS) ---
+const NOTIFICATION_QUEUE = [];
+
+// --- 3. WEBHOOK SUBSCRIPTIONS (Mock Database) ---
+const WEBHOOK_SUBSCRIPTIONS = [
+    { id: 'wh_123', url: 'https://site.com/hooks', events: ['payment.succeeded', 'payment.failed'] }
 ];
 
+// --- 4. DATA STORES ---
+let transactions = [];
 let products = [
-  { id: 'prod_1', name: 'Starter Plan', description: 'Perfect for small businesses', status: 'active', price: 29.00, currency: 'USD', created: new Date().toISOString() },
-  { id: 'prod_2', name: 'Pro Plan', description: 'Advanced features for scaling', status: 'active', price: 99.00, currency: 'USD', created: new Date().toISOString() }
+  { id: 'prod_1', name: 'Starter Plan', description: 'Small biz', status: 'active', price: 29.00, currency: 'USD' }
 ];
 
-let features = [
-  { id: 'feat_1', name: 'Zero Latency Payouts', status: 'active', created: new Date().toISOString() },
-  { id: 'feat_2', name: 'AI Fraud Detection', status: 'active', created: new Date().toISOString() }
-];
-
-let coupons = [
-  { id: 'cpn_WELCOME20', name: 'Welcome 20%', status: 'active', discount: '20%', created: new Date().toISOString() }
-];
-
-let clusters = {
-    go: { status: 'optimal', load: '12%', throughput: '14.2k ops/s', uptime: '99.99%', last_heartbeat: Date.now() },
-    python: { status: 'optimal', load: '45%', throughput: '2.4k risk_anal/s', uptime: '99.98%', last_heartbeat: Date.now() },
-    node: { status: 'optimal', load: '8%', throughput: '8.1k msg/s', uptime: '100%', last_heartbeat: Date.now() }
-};
-
-let modularMetrics = {
-    cost_observability: {审计: 98, 观察: 100, 优化: 95, anomalies_detected: 2, total_savings: "$12.4K"},
-    revenue_recovery: {retry_success_rate: "18.5%", churn_prevented: 42, recovered_amount: "$8.2K"},
-    vault: {tokens_stored: 12500, pci_compliance: "L1 STATUS", bank_nodes: 45},
-    intelligent_routing: {faar: "99.2%", active_psps: 8, latency: "24ms"},
-    reconciliation: {status: "MATCHED", auto_fetch: "ACTIVE", variance: "$0.00"}
-};
-
-// --- SIMULATION ENGINE ---
-
-function generateTransaction() {
-    const assets = ['ETH', 'SOL', 'USDC', 'BTC', 'MATIC'];
-    const fiats = ['INR', 'USD', 'EUR', 'AED'];
-    const types = ['convert', 'send', 'receive', 'payout'];
-    
-    const asset = assets[Math.floor(Math.random() * assets.length)];
-    const fiat = fiats[Math.floor(Math.random() * fiats.length)];
-    const type = types[Math.floor(Math.random() * types.length)];
-    const amount = (Math.random() * 10).toFixed(4);
-    
-    const txn = {
-        id: `TXN-${Math.floor(Math.random() * 90000) + 10000}`,
-        hash: `0x${uuidv4().substring(0, 8)}...${uuidv4().substring(24, 32)}`,
+// --- CORE EVENT BUS ---
+function emitEvent(type, payload) {
+    const event = {
+        id: `evt_${uuidv4().replace(/-/g, '').substring(0, 24)}`,
+        object: 'event',
         type: type,
-        fromAmount: parseFloat(amount),
-        fromCurrency: asset,
-        toAmount: type === 'convert' ? (amount * 84 * 2500).toFixed(2) : amount,
-        toCurrency: type === 'convert' ? fiat : asset,
-        status: Math.random() > 0.1 ? 'success' : 'failed',
-        timestamp: new Date().toISOString(),
-        fee: (Math.random() * 5).toFixed(2),
-        chain: asset === 'SOL' ? 'Solana' : 'Ethereum',
-        merchant: 'Global_Partner_' + Math.floor(Math.random() * 100)
+        created: Date.now(),
+        data: { object: payload },
+        request: { id: `req_${uuidv4().substring(0, 8)}`, idempotency_key: null }
     };
 
-    transactions.unshift(txn);
-    if (transactions.length > 100) transactions.pop();
+    // 1. Persist Event (Immutable)
+    EVENT_LOG.unshift(event);
+    if (EVENT_LOG.length > 500) EVENT_LOG.pop();
+
+    // 2. Broadcast to Real-time Dashboard (Dev Console)
+    io.emit('system_event', event);
+
+    // 3. Push to Queue (Decoupled Processing)
+    pushToQueue(event);
     
-    io.emit('new_transaction', txn);
-    console.log(`[ENGINE] New TXN processed: ${txn.id} | Status: ${txn.status}`);
+    return event;
 }
 
-setInterval(() => {
-    Object.keys(clusters).forEach(k => {
-        clusters[k].load = Math.floor(Math.random() * 60) + 5 + '%';
-        clusters[k].last_heartbeat = Date.now();
+function pushToQueue(event) {
+    // Simulate SQS Delay / Reliability Buffer
+    setTimeout(() => {
+        NOTIFICATION_QUEUE.push(event);
+        processQueue();
+    }, Math.random() * 500); // 0-500ms jitter
+}
+
+// --- NOTIFICATION DISPATCHER (The Consumer) ---
+async function processQueue() {
+    if (NOTIFICATION_QUEUE.length === 0) return;
+
+    const event = NOTIFICATION_QUEUE.shift();
+    console.log(`[SQS] Processing event: ${event.type} (${event.id})`);
+
+    // Channel 1: Email Service
+    if (event.type.includes('payment') || event.type.includes('payout')) {
+        await dispatchEmail(event);
+    }
+
+    // Channel 2: SMS Service (Critical only)
+    if (event.type === 'payment.failed' || event.type === 'payout.failed') {
+        await dispatchSMS(event);
+    }
+
+    // Channel 3: Webhooks
+    await dispatchWebhooks(event);
+}
+
+// --- CHANNELS ---
+async function dispatchEmail(event) {
+    // Simulate async email sending (Resend/SendGrid)
+    const delay = Math.floor(Math.random() * 1000) + 500;
+    setTimeout(() => {
+        const notification = {
+            id: `notif_email_${uuidv4().substring(0, 8)}`,
+            channel: 'email',
+            event_id: event.id,
+            status: Math.random() > 0.95 ? 'failed' : 'sent', // 5% failure
+            recipient: 'merchant@grapepay.com',
+            timestamp: Date.now()
+        };
+        io.emit('notification_log', notification);
+        console.log(`[EMAIL] Sent for ${event.type}`);
+    }, delay);
+}
+
+async function dispatchSMS(event) {
+    // Simulate Twilio
+    const delay = Math.floor(Math.random() * 500) + 200;
+    setTimeout(() => {
+        const notification = {
+            id: `notif_sms_${uuidv4().substring(0, 8)}`,
+            channel: 'sms',
+            event_id: event.id,
+            status: 'sent',
+            recipient: '+15550199',
+            timestamp: Date.now()
+        };
+        io.emit('notification_log', notification);
+        console.log(`[SMS] Alert sent for ${event.type}`);
+    }, delay);
+}
+
+async function dispatchWebhooks(event) {
+    const subs = WEBHOOK_SUBSCRIPTIONS.filter(sub => sub.events.includes(event.type) || sub.events.includes('*'));
+    
+    subs.forEach(sub => {
+        const delay = Math.floor(Math.random() * 2000) + 100;
+        setTimeout(() => {
+            const success = Math.random() > 0.1; // 10% webhook failure (simulate network issues)
+            const notification = {
+                id: `notif_wh_${uuidv4().substring(0, 8)}`,
+                channel: 'webhook',
+                event_id: event.id,
+                status: success ? '200 OK' : '500 Server Error',
+                recipient: sub.url,
+                timestamp: Date.now()
+            };
+            io.emit('notification_log', notification);
+            
+            // Automatic Retry Logic (Simplified)
+            if (!success) {
+                console.log(`[WEBHOOK] Failed for ${event.id}, retrying in 5s...`);
+                setTimeout(() => {
+                    notification.status = '200 OK (Retry)';
+                    io.emit('notification_log', { ...notification, id: notification.id + '_retry' });
+                }, 5000);
+            }
+        }, delay);
     });
-    io.emit('cluster_update', clusters);
-}, 3000);
-
-function startSimulation() {
-    generateTransaction();
-    const next = Math.floor(Math.random() * 15000) + 15000;
-    setTimeout(startSimulation, next);
 }
+
+// --- REAL PAYMENT PROCESSING ---
+// No automatic simulation - events are only emitted when real payments happen via API
 
 // --- API ENDPOINTS ---
 
+app.get('/api/events', (req, res) => res.json(EVENT_LOG));
 app.get('/api/transactions', (req, res) => res.json(transactions));
-
-// --- PRODUCT CATALOG ROUTES ---
-app.get('/api/products', (req, res) => res.json(products));
-app.post('/api/products', (req, res) => {
-  const newProduct = { id: `prod_${Date.now()}`, ...req.body, created: new Date().toISOString() };
-  products.push(newProduct);
-  res.json(newProduct);
-});
-
-app.get('/api/features', (req, res) => res.json(features));
-app.post('/api/features', (req, res) => {
-  const newFeature = { id: `feat_${Date.now()}`, ...req.body, created: new Date().toISOString() };
-  features.push(newFeature);
-  res.json(newFeature);
-});
-
-app.get('/api/coupons', (req, res) => res.json(coupons));
-app.post('/api/coupons', (req, res) => {
-  const newCoupon = { id: `cpn_${req.body.code || Date.now()}`, ...req.body, created: new Date().toISOString() };
-  coupons.push(newCoupon);
-  res.json(newCoupon);
-});
-
-app.post('/api/validate-product', async (req, res) => {
-  try {
-    const response = await fetch('http://localhost:4000/api/go/validate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(req.body)
-    });
-    const data = await response.json();
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: 'Go engine unreachable', details: err.message });
-  }
-});
-
-app.get('/api/stats', (req, res) => {
-    const totalVolume = transactions.reduce((acc, t) => acc + (t.type === 'convert' ? parseFloat(t.fromAmount) : 0), 0);
-    res.json({
-        total_txns: transactions.length,
-        total_volume: totalVolume.toFixed(2),
-        success_rate: '98.4%',
-        active_users: 1240,
-        clusters: clusters
-    });
-});
+app.get('/api/stats', (req, res) => res.json({ event_count: EVENT_LOG.length, queue_size: NOTIFICATION_QUEUE.length }));
 
 app.post('/api/payout', (req, res) => {
-    const { amount, currency } = req.body;
-    console.log(`[BACKEND] Payout requested: ${amount} ${currency}`);
+    const payout = { id: `po_${uuidv4()}`, amount: req.body.amount, status: 'pending' };
+    emitEvent('payout.created', payout);
+    
     setTimeout(() => {
-        const txnId = `PAY-${Math.floor(Math.random() * 90000) + 10000}`;
-        io.emit('system_alert', { 
-            type: 'payout_processed', 
-            message: `Payout ${txnId} successfully broadcasted to banking network.` 
-        });
-    }, 2000);
-    res.json({ status: 'initiated', ref: uuidv4() });
+        emitEvent('payout.paid', { ...payout, status: 'paid' });
+    }, 3000);
+    
+    res.json(payout);
+});
+
+// Create Payment Intent (Real Payments Only)
+app.post('/api/create-payment', (req, res) => {
+    const { amount, currency, customer_email, description } = req.body;
+    
+    const payment = {
+        id: `pi_${uuidv4().replace(/-/g, '').substring(0, 24)}`,
+        amount: parseFloat(amount),
+        currency: currency || 'USD',
+        status: 'pending',
+        customer_email,
+        description,
+        created: new Date().toISOString()
+    };
+    
+    transactions.unshift(payment);
+    if (transactions.length > 100) transactions.pop();
+    
+    emitEvent('payment_intent.created', payment);
+    
+    // Simulate payment processing (2-5 seconds)
+    setTimeout(() => {
+        const isSuccess = Math.random() > 0.05; // 95% success rate for real payments
+        payment.status = isSuccess ? 'succeeded' : 'failed';
+        
+        if (isSuccess) {
+            emitEvent('payment_intent.succeeded', payment);
+            emitEvent('charge.succeeded', { ...payment, id: `ch_${payment.id.substring(3)}` });
+        } else {
+            emitEvent('payment_intent.payment_failed', { ...payment, failure_code: 'card_declined' });
+        }
+    }, Math.random() * 3000 + 2000);
+    
+    res.json(payment);
 });
 
 server.listen(PORT, () => {
-    console.log(`
-    ================================================
-    GRAPEPAY MULTI-CLUSTER BACKEND ENGINE ACTIVE
-    ================================================
-    API Server : http://localhost:${PORT}
-    WebSocket  : ws://localhost:${PORT}
-    
-    Simulating Go (Engine), Python (Risk), Node (Hub)
-    ================================================
-    `);
-    startSimulation();
+    console.log(`[GRAPEPAY ENGINE] Event-Driven Architecture Active on port ${PORT}`);
+    console.log(`[SYSTEM] SQS Consumer Ready | Email/SMS/Webhook Dispatchers Ready`);
+    console.log(`[PAYMENT] Waiting for real payment requests...`);
 });
