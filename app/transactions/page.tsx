@@ -1,13 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { 
   Plus, 
-  HelpCircle, 
-  Bell, 
   Settings, 
-  LayoutGrid, 
   ChevronDown, 
   X, 
   Search, 
@@ -27,262 +25,29 @@ import {
   MoreHorizontal,
   ChevronRight,
   ExternalLink,
-  Zap
+  Zap,
+  CheckCircle,
+  XCircle,
+  RefreshCw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-
-import { getCurrencyForCountry } from '@/lib/currencies';
-
-export default function TransactionsPage() {
-  const [activeTab, setActiveTab] = useState('payments');
-  const [filter, setFilter] = useState('all');
-  const [currency, setCurrency] = useState('USD');
-  const [businessName, setBusinessName] = useState('nextpayments');
-  const currentYear = new Date().getFullYear();
-
-  useEffect(() => {
-    const userData = localStorage.getItem('grapepay_user');
-    if (userData) {
-      const parsedUser = JSON.parse(userData);
-      if (parsedUser.region) {
-        setCurrency(getCurrencyForCountry(parsedUser.region));
-      }
-      if (parsedUser.business_name || parsedUser.name) {
-        setBusinessName(parsedUser.business_name || parsedUser.name);
-      }
-    }
-  }, []);
-
-  const tabs = [
-    { id: 'payments', label: 'Payments' },
-    { id: 'payouts', label: 'Payouts' },
-    { id: 'fees', label: 'Collected fees' },
-    { id: 'transfers', label: 'Transfers' },
-    { id: 'all', label: 'All activity' },
-  ];
-
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'payments':
-        return (
-          <div className="space-y-6">
-            <div className="bg-[#f7f8f9] border border-slate-200/60 rounded-lg px-4 py-3 flex items-center justify-between">
-               <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1.5 hover:bg-white p-1 rounded transition-colors cursor-pointer">
-                     <Zap size={14} className="text-slate-400 group-hover:text-amber-500" />
-                     <span className="text-[12px] font-bold text-slate-900">New</span>
-                  </div>
-                  <p className="text-[13px] text-slate-600 font-medium">
-                     Transactions now include payments accepted by your connected accounts. Use the "Settlement merchant" filter and the "Transferred to" filter to view them.
-                  </p>
-               </div>
-               <div className="flex items-center gap-5">
-                  <button className="text-[13px] font-bold text-[#635bff] hover:underline">Learn more</button>
-                  <button className="text-slate-400 hover:text-slate-600 transition-colors"><X size={16}/></button>
-               </div>
-            </div>
-
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth">
-               {[
-                 { label: 'All', active: true },
-                 { label: 'Succeeded' },
-                 { label: 'Refunded' },
-                 { label: 'Disputed' },
-                 { label: 'Failed' },
-                 { label: 'Uncaptured' },
-                 { label: 'Blocked' },
-               ].map(btn => (
-                  <button
-                    key={btn.label}
-                    className={cn(
-                       "px-8 py-2.5 text-[14px] font-bold border rounded-lg transition-all h-11 min-w-[120px] text-left relative overflow-hidden group",
-                       btn.active ? "bg-white border-[#635bff] text-[#635bff] shadow-sm shadow-purple-200 ring-2 ring-purple-50" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
-                    )}
-                  >
-                     {btn.label}
-                     {btn.active && <div className="absolute inset-x-0 bottom-0 h-0.5 bg-[#635bff]" />}
-                  </button>
-               ))}
-            </div>
-
-            <div className="flex items-center justify-between">
-               <div className="flex items-center gap-3">
-                  {[
-                    { label: 'Date and time', icon: Calendar },
-                    { label: 'Amount', icon: PlusCircle },
-                    { label: 'Currency', icon: Globe },
-                    { label: 'Status', icon: Info },
-                    { label: 'Payment method', icon: CreditCard },
-                    { label: 'More filters', icon: Plus },
-                  ].map(f => (
-                    <Button key={f.label} variant="outline" className="h-7 text-[12px] font-bold text-slate-600 hover:bg-slate-50 gap-1.5 px-2.5 bg-white border-slate-200 shadow-sm">
-                       <f.icon size={12} className="text-slate-400" /> {f.label}
-                    </Button>
-                  ))}
-               </div>
-               <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" className="h-8 gap-2 border-slate-200 text-slate-600 font-bold px-4">
-                     <Download size={14} className="text-slate-400" /> Export
-                  </Button>
-                  <Button variant="outline" size="sm" className="h-8 gap-2 border-slate-200 text-slate-600 font-bold px-4">
-                     <Settings size={14} className="text-slate-400" /> Edit columns
-                  </Button>
-               </div>
-            </div>
-
-          <div className="flex flex-col items-center justify-center py-24 space-y-4">
-             <div className="h-12 w-12 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100 shadow-sm">
-                <Search size={24} className="text-slate-400" />
-             </div>
-             <div className="text-center space-y-1">
-                <h3 className="text-[15px] font-bold text-slate-900 tracking-tight">No payments found</h3>
-                <p className="text-[13px] text-slate-500 font-medium tracking-tight">
-                   You have no payments yet.
-                </p>
-             </div>
-             <Button className="bg-[#635bff] hover:bg-[#5249e0] font-bold text-sm h-9 px-4 rounded-lg mt-4 shadow-lg shadow-purple-600/20">
-                <Plus size={16} className="mr-2" /> Create payment
-             </Button>
-          </div>
-          </div>
-        );
-      case 'all':
-        return (
-          <div className="space-y-6">
-            <div className="flex items-center gap-2">
-               {[
-                 { label: 'Currency', icon: Globe },
-                 { label: 'Type', icon: Info },
-                 { label: 'Created', icon: Calendar },
-                 { label: 'Available on', icon: Clock },
-               ].map(f => (
-                 <Button key={f.label} variant="outline" className="h-7 text-[12px] font-bold text-slate-600 hover:bg-slate-50 gap-1.5 px-2.5 bg-white border-slate-200 shadow-sm">
-                    <Plus size={12} className="text-slate-400" /> {f.label}
-                 </Button>
-               ))}
-            </div>
-
-          <div className="flex flex-col items-center justify-center py-24 space-y-4">
-             <div className="h-12 w-12 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100 shadow-sm">
-                <Search size={24} className="text-slate-400" />
-             </div>
-             <div className="text-center space-y-1">
-                <h3 className="text-[15px] font-bold text-slate-900 tracking-tight">No activity found</h3>
-                <p className="text-[13px] text-slate-500 font-medium tracking-tight">
-                   Activity will show up here.
-                </p>
-             </div>
-          </div>
-          </div>
-        );
-      case 'payouts':
-        return (
-          <div className="flex flex-col items-center justify-center py-24 space-y-4">
-            <div className="h-12 w-12 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100 shadow-sm">
-               <ExternalLink size={24} className="text-slate-400" />
-            </div>
-            <div className="text-center space-y-1">
-               <h3 className="text-[15px] font-bold text-slate-900 tracking-tight">No payouts</h3>
-               <p className="text-[13px] text-slate-500 font-medium max-w-[400px]">
-                  Payouts will show up here, along with the date they're expected to arrive in your bank account.
-               </p>
-               <button className="text-[13px] font-bold text-[#635bff] hover:underline flex items-center gap-1 mx-auto mt-2">
-                  Learn more <ChevronRight size={14} />
-               </button>
-            </div>
-            <Button className="bg-[#635bff] hover:bg-[#5249e0] font-bold text-sm h-9 px-4 rounded-lg mt-4 shadow-lg shadow-purple-600/20">
-               <Plus size={16} className="mr-2" /> Create your first payout
-            </Button>
-          </div>
-        );
-      case 'fees':
-        return (
-          <div className="flex flex-col items-center justify-center py-24 space-y-4">
-            <div className="h-12 w-12 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100 shadow-sm">
-               <Search size={24} className="text-slate-400" />
-            </div>
-            <div className="text-center space-y-1">
-               <h3 className="text-[15px] font-bold text-slate-900 tracking-tight">No results found</h3>
-               <p className="text-[13px] text-slate-500 font-medium tracking-tight">
-                  There aren't any results for that query.
-               </p>
-            </div>
-          </div>
-        );
-      case 'transfers':
-        return (
-          <div className="flex flex-col items-center justify-center py-24 space-y-4">
-            <div className="h-12 w-12 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100 shadow-sm">
-               <ArrowLeftRight size={24} className="text-slate-400" />
-            </div>
-            <div className="text-center space-y-1">
-               <h3 className="text-[15px] font-bold text-slate-900 tracking-tight">No live transfers</h3>
-               <p className="text-[13px] text-slate-500 font-medium tracking-tight">
-                  You don't have any live transfers.
-               </p>
-               <button className="text-[13px] font-bold text-[#635bff] hover:underline flex items-center gap-1 mx-auto mt-2">
-                  Learn more <ChevronRight size={14} />
-               </button>
-            </div>
-          </div>
-        );
-      default:
-        return (
-          <div className="flex flex-col items-center justify-center py-24 space-y-4">
-            <div className="h-12 w-12 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100 shadow-sm">
-               <SearchX size={24} className="text-slate-400" />
-            </div>
-            <div className="text-center space-y-1">
-               <h3 className="text-[15px] font-bold text-slate-900 tracking-tight">No payments found</h3>
-               <p className="text-[13px] text-slate-500 font-medium tracking-tight">
-                  Try adjusting your filters to find what you're looking for.
-               </p>
-            </div>
-          </div>
-        );
-    }
-  };
-
-  return (
-    <DashboardLayout>
-      <div className="flex flex-col">
-        {/* Page Content */}
-        <div className="p-8 space-y-8">
-          <div className="flex items-center justify-between">
-             <h1 className="text-[28px] font-bold text-slate-900 tracking-tight">Transactions</h1>
-             <div className="flex items-center gap-2">
-                <Button className="bg-[#635bff] hover:bg-[#5249e0] font-bold text-sm h-8 px-3 shadow-lg shadow-purple-600/10">
-                   <Plus size={16} className="mr-2" /> Create payment
-                </Button>
-                <Button variant="outline" className="text-slate-600 font-bold text-sm h-8 px-3 bg-white shadow-sm hover:bg-slate-50 border-slate-200">
-                   <BarChart3 size={14} className="mr-2 text-slate-400" /> Analyze
-                </Button>
-             </div>
-          </div>
-
-          <div className="flex items-center gap-6 border-b border-slate-100 overflow-x-auto scrollbar-hide">
-             {tabs.map(tab => (
-               <button
-                 key={tab.id}
-                 onClick={() => setActiveTab(tab.id)}
-                 className={cn(
-                   "pb-3 text-[14px] font-bold transition-all whitespace-nowrap",
-                   activeTab === tab.id ? "text-[#635bff] border-b-2 border-[#635bff]" : "text-slate-500 hover:text-slate-900"
-                 )}
-               >
-                 {tab.label}
-               </button>
-             ))}
-          </div>
-
-          <div className="min-h-[400px]">
-            {renderContent()}
-          </div>
-        </div>
-      </div>
-    </DashboardLayout>
-  );
-}
+import { formatCurrency, getUserCurrency } from '@/lib/currency';
+import * as XLSX from 'xlsx';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";\n\nexport default function TransactionsPage() {\n  const router = useRouter();\n  const [activeTab, setActiveTab] = useState('payments');\n  const [statusFilter, setStatusFilter] = useState('all');\n  const [currency, setCurrency] = useState('USD');\n  const [businessName, setBusinessName] = useState('nextpayments');\n  const [payments, setPayments] = useState<any[]>([]);\n  const [loading, setLoading] = useState(true);\n  const [searchQuery, setSearchQuery] = useState('');\n  const [timeFilter, setTimeFilter] = useState<'all' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly'>('all');\n  const [dateRange, setDateRange] = useState({ start: '', end: '' });\n  const [amountRange, setAmountRange] = useState({ min: '', max: '' });\n  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string[]>([]);\n  const [selectedColumns, setSelectedColumns] = useState(['id', 'customer', 'amount', 'status', 'date', 'method']);\n  \n  const allColumns = [\n    { id: 'id', label: 'Payment ID' },\n    { id: 'customer', label: 'Customer' },\n    { id: 'amount', label: 'Amount' },\n    { id: 'currency', label: 'Currency' },\n    { id: 'status', label: 'Status' },\n    { id: 'date', label: 'Date & Time' },\n    { id: 'method', label: 'Payment Method' },\n    { id: 'type', label: 'Payment Type' },\n    { id: 'description', label: 'Description' },\n  ];\n\n  useEffect(() => {\n    const userData = localStorage.getItem('grapepay_user');\n    if (userData) {\n      const parsedUser = JSON.parse(userData);\n      if (parsedUser.region || parsedUser.country) {\n        setCurrency(getUserCurrency(parsedUser.country || parsedUser.region));\n      }\n      if (parsedUser.business_name || parsedUser.name) {\n        setBusinessName(parsedUser.business_name || parsedUser.name);\n      }\n    }\n\n    fetchPayments();\n    \n    // Poll for new payments every 2 seconds\n    const interval = setInterval(fetchPayments, 2000);\n    return () => clearInterval(interval);\n  }, []);\n\n  const fetchPayments = async () => {\n    try {\n      const response = await fetch('http://localhost:3001/api/transactions');\n      const data = await response.json();\n      setPayments(data);\n    } catch (error) {\n      console.error('Failed to fetch payments:', error);\n    } finally {\n      setLoading(false);\n    }\n  };\n\n  // Filter payments based on all criteria\n  const filteredPayments = payments.filter(payment => {\n    // Status filter\n    if (statusFilter !== 'all') {\n      const status = payment.status?.toLowerCase();\n      if (statusFilter === 'succeeded' && status !== 'succeeded') return false;\n      if (statusFilter === 'failed' && status !== 'failed') return false;\n      if (statusFilter === 'pending' && status !== 'pending') return false;\n      if (statusFilter === 'refunded' && status !== 'refunded') return false;\n      if (statusFilter === 'disputed' && status !== 'disputed') return false;\n      if (statusFilter === 'uncaptured' && status !== 'uncaptured') return false;\n      if (statusFilter === 'blocked' && status !== 'blocked') return false;\n    }\n\n    // Search filter\n    if (searchQuery) {\n      const query = searchQuery.toLowerCase();\n      const matchesSearch = \n        payment.id?.toLowerCase().includes(query) ||\n        payment.customer_email?.toLowerCase().includes(query) ||\n        payment.description?.toLowerCase().includes(query);\n      if (!matchesSearch) return false;\n    }\n\n    // Time filter\n    if (timeFilter !== 'all') {\n      const paymentDate = new Date(payment.created);\n      const now = new Date();\n      const hourAgo = new Date(now.getTime() - 60 * 60 * 1000);\n      const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);\n      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);\n      const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);\n      const yearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);\n\n      if (timeFilter === 'hourly' && paymentDate < hourAgo) return false;\n      if (timeFilter === 'daily' && paymentDate < dayAgo) return false;\n      if (timeFilter === 'weekly' && paymentDate < weekAgo) return false;\n      if (timeFilter === 'monthly' && paymentDate < monthAgo) return false;\n      if (timeFilter === 'yearly' && paymentDate < yearAgo) return false;\n    }\n\n    // Amount range filter\n    if (amountRange.min && payment.amount < parseFloat(amountRange.min)) return false;\n    if (amountRange.max && payment.amount > parseFloat(amountRange.max)) return false;\n\n    return true;\n  });\n\n  const exportToExcel = () => {\n    const dataToExport = filteredPayments.map(payment => ({\n      'Payment ID': payment.id,\n      'Customer Email': payment.customer_email || '-',\n      'Amount': payment.amount,\n      'Currency': payment.currency,\n      'Status': payment.status,\n      'Payment Type': payment.payment_type || 'one_time',\n      'Interval': payment.interval || '-',\n      'Description': payment.description || '-',\n      'Created': new Date(payment.created).toLocaleString(),\n    }));\n\n    const worksheet = XLSX.utils.json_to_sheet(dataToExport);\n    const workbook = XLSX.utils.book_new();\n    XLSX.utils.book_append_sheet(workbook, worksheet, 'Payments');\n    XLSX.writeFile(workbook, `grapepay-transactions-${new Date().toISOString().split('T')[0]}.xlsx`);\n  };\n\n  const getStatusBadge = (status: string) => {\n    const statusLower = status?.toLowerCase();\n    switch (statusLower) {\n      case 'succeeded':\n        return (\n          <Badge className=\"bg-green-50 text-green-700 border-green-200 font-bold text-xs\">\n            <CheckCircle size={10} className=\"mr-1\" />\n            Succeeded\n          </Badge>\n        );\n      case 'failed':\n        return (\n          <Badge className=\"bg-red-50 text-red-700 border-red-200 font-bold text-xs\">\n            <XCircle size={10} className=\"mr-1\" />\n            Failed\n          </Badge>\n        );\n      case 'pending':\n        return (\n          <Badge className=\"bg-amber-50 text-amber-700 border-amber-200 font-bold text-xs\">\n            <Clock size={10} className=\"mr-1\" />\n            Pending\n          </Badge>\n        );\n      default:\n        return <Badge variant=\"outline\" className=\"text-xs\">{status}</Badge>;\n    }\n  };\n\n  const tabs = [\n    { id: 'payments', label: 'Payments' },\n    { id: 'payouts', label: 'Payouts' },\n    { id: 'fees', label: 'Collected fees' },\n    { id: 'transfers', label: 'Transfers' },\n    { id: 'all', label: 'All activity' },\n  ];\n\n  const renderContent = () => {\n    if (activeTab !== 'payments') {\n      // Keep existing empty states for other tabs\n      return renderEmptyState(activeTab);\n    }\n\n    return (\n      <div className=\"space-y-6\">\n        {/* New Banner */}\n        <div className=\"bg-[#f7f8f9] border border-slate-200/60 rounded-lg px-4 py-3 flex items-center justify-between\">\n          <div className=\"flex items-center gap-3\">\n            <div className=\"flex items-center gap-1.5 hover:bg-white p-1 rounded transition-colors cursor-pointer\">\n              <Zap size={14} className=\"text-slate-400 group-hover:text-amber-500\" />\n              <span className=\"text-[12px] font-bold text-slate-900\">New</span>\n            </div>\n            <p className=\"text-[13px] text-slate-600 font-medium\">\n              Transactions now include payments accepted by your connected accounts. Use the \"Settlement merchant\" filter and the \"Transferred to\" filter to view them.\n            </p>\n          </div>\n          <div className=\"flex items-center gap-5\">\n            <button className=\"text-[13px] font-bold text-[#635bff] hover:underline\">Learn more</button>\n            <button className=\"text-slate-400 hover:text-slate-600 transition-colors\"><X size={16}/></button>\n          </div>\n        </div>\n\n        {/* Status Filters */}\n        <div className=\"flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth\">\n          {[\n            { label: 'All', value: 'all' },\n            { label: 'Succeeded', value: 'succeeded' },\n            { label: 'Refunded', value: 'refunded' },\n            { label: 'Disputed', value: 'disputed' },\n            { label: 'Failed', value: 'failed' },\n            { label: 'Uncaptured', value: 'uncaptured' },\n            { label: 'Blocked', value: 'blocked' },\n          ].map(btn => (\n            <button\n              key={btn.value}\n              onClick={() => setStatusFilter(btn.value)}\n              className={cn(\n                \"px-8 py-2.5 text-[14px] font-bold border rounded-lg transition-all h-11 min-w-[120px] text-left relative overflow-hidden group\",\n                statusFilter === btn.value ? \"bg-white border-[#635bff] text-[#635bff] shadow-sm shadow-purple-200 ring-2 ring-purple-50\" : \"bg-white border-slate-200 text-slate-600 hover:bg-slate-50\"\n              )}\n            >\n              {btn.label}\n              {statusFilter === btn.value && <div className=\"absolute inset-x-0 bottom-0 h-0.5 bg-[#635bff]\" />}\n            </button>\n          ))}\n        </div>\n\n        {/* Advanced Filters & Actions */}\n        <div className=\"flex items-center justify-between\">\n          <div className=\"flex items-center gap-3\">\n            {/* Time Filter */}\n            <Popover>\n              <PopoverTrigger asChild>\n                <Button variant=\"outline\" className=\"h-7 text-[12px] font-bold text-slate-600 hover:bg-slate-50 gap-1.5 px-2.5 bg-white border-slate-200 shadow-sm\">\n                  <Calendar size={12} className=\"text-slate-400\" /> \n                  {timeFilter === 'all' ? 'Date and time' : timeFilter.charAt(0).toUpperCase() + timeFilter.slice(1)}\n                </Button>\n              </PopoverTrigger>\n              <PopoverContent className=\"w-48 p-2\">\n                <div className=\"space-y-1\">\n                  {['all', 'hourly', 'daily', 'weekly', 'monthly', 'yearly'].map(filter => (\n                    <button\n                      key={filter}\n                      onClick={() => setTimeFilter(filter as any)}\n                      className={cn(\n                        \"w-full text-left px-3 py-2 text-sm rounded hover:bg-slate-100 font-medium capitalize\",\n                        timeFilter === filter && \"bg-purple-50 text-[#635bff] font-bold\"\n                      )}\n                    >\n                      {filter}\n                    </button>\n                  ))}\n                </div>\n              </PopoverContent>\n            </Popover>\n\n            {/* Amount Filter */}\n            <Popover>\n              <PopoverTrigger asChild>\n                <Button variant=\"outline\" className=\"h-7 text-[12px] font-bold text-slate-600 hover:bg-slate-50 gap-1.5 px-2.5 bg-white border-slate-200 shadow-sm\">\n                  <PlusCircle size={12} className=\"text-slate-400\" /> Amount\n                </Button>\n              </PopoverTrigger>\n              <PopoverContent className=\"w-64 p-4\">\n                <div className=\"space-y-3\">\n                  <div>\n                    <label className=\"text-xs font-bold text-slate-700\">Min Amount</label>\n                    <Input \n                      type=\"number\" \n                      placeholder=\"0.00\" \n                      value={amountRange.min}\n                      onChange={(e) => setAmountRange({...amountRange, min: e.target.value})}\n                      className=\"mt-1\"\n                    />\n                  </div>\n                  <div>\n                    <label className=\"text-xs font-bold text-slate-700\">Max Amount</label>\n                    <Input \n                      type=\"number\" \n                      placeholder=\"999999\" \n                      value={amountRange.max}\n                      onChange={(e) => setAmountRange({...amountRange, max: e.target.value})}\n                      className=\"mt-1\"\n                    />\n                  </div>\n                </div>\n              </PopoverContent>\n            </Popover>\n\n            <Button variant=\"outline\" className=\"h-7 text-[12px] font-bold text-slate-600 hover:bg-slate-50 gap-1.5 px-2.5 bg-white border-slate-200 shadow-sm\">\n              <Globe size={12} className=\"text-slate-400\" /> Currency\n            </Button>\n            <Button variant=\"outline\" className=\"h-7 text-[12px] font-bold text-slate-600 hover:bg-slate-50 gap-1.5 px-2.5 bg-white border-slate-200 shadow-sm\">\n              <CreditCard size={12} className=\"text-slate-400\" /> Payment method\n            </Button>\n            <Button variant=\"outline\" className=\"h-7 text-[12px] font-bold text-slate-600 hover:bg-slate-50 gap-1.5 px-2.5 bg-white border-slate-200 shadow-sm\">\n              <Plus size={12} className=\"text-slate-400\" /> More filters\n            </Button>\n          </div>\n          \n          <div className=\"flex items-center gap-2\">\n            <Button \n              variant=\"outline\" \n              size=\"sm\" \n              className=\"h-8 gap-2 border-slate-200 text-slate-600 font-bold px-4\"\n              onClick={exportToExcel}\n              disabled={filteredPayments.length === 0}\n            >\n              <Download size={14} className=\"text-slate-400\" /> Export\n            </Button>\n            \n            {/* Edit Columns */}\n            <Dialog>\n              <DialogTrigger asChild>\n                <Button variant=\"outline\" size=\"sm\" className=\"h-8 gap-2 border-slate-200 text-slate-600 font-bold px-4\">\n                  <Settings size={14} className=\"text-slate-400\" /> Edit columns\n                </Button>\n              </DialogTrigger>\n              <DialogContent>\n                <DialogHeader>\n                  <DialogTitle>Customize columns</DialogTitle>\n                  <DialogDescription>\n                    Select which columns to display in the table\n                  </DialogDescription>\n                </DialogHeader>\n                <div className=\"space-y-3 py-4\">\n                  {allColumns.map(col => (\n                    <div key={col.id} className=\"flex items-center space-x-2\">\n                      <Checkbox \n                        id={col.id}\n                        checked={selectedColumns.includes(col.id)}\n                        onCheckedChange={(checked) => {\n                          if (checked) {\n                            setSelectedColumns([...selectedColumns, col.id]);\n                          } else {\n                            setSelectedColumns(selectedColumns.filter(c => c !== col.id));\n                          }\n                        }}\n                      />\n                      <label htmlFor={col.id} className=\"text-sm font-medium cursor-pointer\">\n                        {col.label}\n                      </label>\n                    </div>\n                  ))}\n                </div>\n              </DialogContent>\n            </Dialog>\n          </div>\n        </div>\n\n        {/* Payments Table or Empty State */}\n        {loading ? (\n          <div className=\"flex items-center justify-center py-24\">\n            <RefreshCw className=\"animate-spin text-slate-400\" size={32} />\n          </div>\n        ) : filteredPayments.length === 0 ? (\n          <div className=\"flex flex-col items-center justify-center py-24 space-y-4\">\n            <div className=\"h-12 w-12 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100 shadow-sm\">\n              <Search size={24} className=\"text-slate-400\" />\n            </div>\n            <div className=\"text-center space-y-1\">\n              <h3 className=\"text-[15px] font-bold text-slate-900 tracking-tight\">No payments found</h3>\n              <p className=\"text-[13px] text-slate-500 font-medium tracking-tight\">\n                You have no payments yet.\n              </p>\n            </div>\n            <Button \n              onClick={() => router.push('/test-payment')}\n              className=\"bg-[#635bff] hover:bg-[#5249e0] font-bold text-sm h-9 px-4 rounded-lg mt-4 shadow-lg shadow-purple-600/20\"\n            >\n              <Plus size={16} className=\"mr-2\" /> Create payment\n            </Button>\n          </div>\n        ) : (\n          <Card className=\"border-slate-200 overflow-hidden\">\n            <div className=\"overflow-x-auto\">\n              <table className=\"w-full\">\n                <thead className=\"bg-slate-50 border-b border-slate-200\">\n                  <tr>\n                    {selectedColumns.includes('id') && (\n                      <th className=\"text-left p-4 text-xs font-bold text-slate-600 uppercase tracking-wider\">Payment</th>\n                    )}\n                    {selectedColumns.includes('customer') && (\n                      <th className=\"text-left p-4 text-xs font-bold text-slate-600 uppercase tracking-wider\">Customer</th>\n                    )}\n                    {selectedColumns.includes('amount') && (\n                      <th className=\"text-left p-4 text-xs font-bold text-slate-600 uppercase tracking-wider\">Amount</th>\n                    )}\n                    {selectedColumns.includes('currency') && (\n                      <th className=\"text-left p-4 text-xs font-bold text-slate-600 uppercase tracking-wider\">Currency</th>\n                    )}\n                    {selectedColumns.includes('status') && (\n                      <th className=\"text-left p-4 text-xs font-bold text-slate-600 uppercase tracking-wider\">Status</th>\n                    )}\n                    {selectedColumns.includes('type') && (\n                      <th className=\"text-left p-4 text-xs font-bold text-slate-600 uppercase tracking-wider\">Type</th>\n                    )}\n                    {selectedColumns.includes('date') && (\n                      <th className=\"text-left p-4 text-xs font-bold text-slate-600 uppercase tracking-wider\">Date</th>\n                    )}\n                    {selectedColumns.includes('method') && (\n                      <th className=\"text-left p-4 text-xs font-bold text-slate-600 uppercase tracking-wider\">Method</th>\n                    )}\n                  </tr>\n                </thead>\n                <tbody className=\"divide-y divide-slate-100\">\n                  {filteredPayments.map(payment => (\n                    <tr key={payment.id} className=\"hover:bg-slate-50 transition-colors\">\n                      {selectedColumns.includes('id') && (\n                        <td className=\"p-4\">\n                          <div className=\"font-mono text-sm font-bold text-slate-900\">{payment.id}</div>\n                          {payment.description && (\n                            <div className=\"text-xs text-slate-500 mt-1\">{payment.description}</div>\n                          )}\n                        </td>\n                      )}\n                      {selectedColumns.includes('customer') && (\n                        <td className=\"p-4\">\n                          <div className=\"text-sm text-slate-900\">{payment.customer_email || '—'}</div>\n                        </td>\n                      )}\n                      {selectedColumns.includes('amount') && (\n                        <td className=\"p-4\">\n                          <div className=\"text-sm font-bold text-slate-900\">\n                            {formatCurrency(payment.amount || 0, payment.currency || currency)}\n                          </div>\n                        </td>\n                      )}\n                      {selectedColumns.includes('currency') && (\n                        <td className=\"p-4\">\n                          <div className=\"text-sm text-slate-600\">{payment.currency || currency}</div>\n                        </td>\n                      )}\n                      {selectedColumns.includes('status') && (\n                        <td className=\"p-4\">{getStatusBadge(payment.status)}</td>\n                      )}\n                      {selectedColumns.includes('type') && (\n                        <td className=\"p-4\">\n                          <div className=\"text-sm text-slate-600 capitalize\">\n                            {payment.payment_type || 'One-time'}\n                          </div>\n                          {payment.interval && (\n                            <div className=\"text-xs text-slate-500 capitalize\">{payment.interval}</div>\n                          )}\n                        </td>\n                      )}\n                      {selectedColumns.includes('date') && (\n                        <td className=\"p-4\">\n                          <div className=\"text-sm text-slate-600\">\n                            {new Date(payment.created).toLocaleDateString('en-US', {\n                              month: 'short',\n                              day: 'numeric',\n                              year: 'numeric'\n                            })}\n                          </div>\n                          <div className=\"text-xs text-slate-500 mt-1\">\n                            {new Date(payment.created).toLocaleTimeString('en-US', {\n                              hour: '2-digit',\n                              minute: '2-digit'\n                            })}\n                          </div>\n                        </td>\n                      )}\n                      {selectedColumns.includes('method') && (\n                        <td className=\"p-4\">\n                          <div className=\"flex items-center gap-2\">\n                            <CreditCard size={14} className=\"text-slate-400\" />\n                            <span className=\"text-sm text-slate-600\">Card</span>\n                          </div>\n                        </td>\n                      )}\n                    </tr>\n                  ))}\n                </tbody>\n              </table>\n            </div>\n          </Card>\n        )}\n      </div>\n    );\n  };\n\n  const renderEmptyState = (tab: string) => {\n    switch (tab) {\n      case 'all':\n        return (\n          <div className=\"flex flex-col items-center justify-center py-24 space-y-4\">\n            <div className=\"h-12 w-12 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100 shadow-sm\">\n              <Search size={24} className=\"text-slate-400\" />\n            </div>\n            <div className=\"text-center space-y-1\">\n              <h3 className=\"text-[15px] font-bold text-slate-900 tracking-tight\">No activity found</h3>\n              <p className=\"text-[13px] text-slate-500 font-medium tracking-tight\">\n                Activity will show up here.\n              </p>\n            </div>\n          </div>\n        );\n      case 'payouts':\n        return (\n          <div className=\"flex flex-col items-center justify-center py-24 space-y-4\">\n            <div className=\"h-12 w-12 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100 shadow-sm\">\n              <ExternalLink size={24} className=\"text-slate-400\" />\n            </div>\n            <div className=\"text-center space-y-1\">\n              <h3 className=\"text-[15px] font-bold text-slate-900 tracking-tight\">No payouts</h3>\n              <p className=\"text-[13px] text-slate-500 font-medium max-w-[400px]\">\n                Payouts will show up here, along with the date they're expected to arrive in your bank account.\n              </p>\n            </div>\n          </div>\n        );\n      case 'fees':\n        return (\n          <div className=\"flex flex-col items-center justify-center py-24 space-y-4\">\n            <div className=\"h-12 w-12 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100 shadow-sm\">\n              <Search size={24} className=\"text-slate-400\" />\n            </div>\n            <div className=\"text-center space-y-1\">\n              <h3 className=\"text-[15px] font-bold text-slate-900 tracking-tight\">No results found</h3>\n            </div>\n          </div>\n        );\n      case 'transfers':\n        return (\n          <div className=\"flex flex-col items-center justify-center py-24 space-y-4\">\n            <div className=\"h-12 w-12 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100 shadow-sm\">\n              <ArrowLeftRight size={24} className=\"text-slate-400\" />\n            </div>\n            <div className=\"text-center space-y-1\">\n              <h3 className=\"text-[15px] font-bold text-slate-900 tracking-tight\">No live transfers</h3>\n            </div>\n          </div>\n        );\n      default:\n        return null;\n    }\n  };\n\n  return (\n    <DashboardLayout>\n      <div className=\"flex flex-col\">\n        <div className=\"p-8 space-y-8\">\n          <div className=\"flex items-center justify-between\">\n            <h1 className=\"text-[28px] font-bold text-slate-900 tracking-tight\">Transactions</h1>\n            <div className=\"flex items-center gap-2\">\n              <Button \n                onClick={() => router.push('/test-payment')}\n                className=\"bg-[#635bff] hover:bg-[#5249e0] font-bold text-sm h-8 px-3 shadow-lg shadow-purple-600/10\"\n              >\n                <Plus size={16} className=\"mr-2\" /> Create payment\n              </Button>\n              <Button variant=\"outline\" className=\"text-slate-600 font-bold text-sm h-8 px-3 bg-white shadow-sm hover:bg-slate-50 border-slate-200\">\n                <BarChart3 size={14} className=\"mr-2 text-slate-400\" /> Analyze\n              </Button>\n            </div>\n          </div>\n\n          <div className=\"flex items-center gap-6 border-b border-slate-100 overflow-x-auto scrollbar-hide\">\n            {tabs.map(tab => (\n              <button\n                key={tab.id}\n                onClick={() => setActiveTab(tab.id)}\n                className={cn(\n                  \"pb-3 text-[14px] font-bold transition-all whitespace-nowrap\",\n                  activeTab === tab.id ? \"text-[#635bff] border-b-2 border-[#635bff]\" : \"text-slate-500 hover:text-slate-900\"\n                )}\n              >\n                {tab.label}\n              </button>\n            ))}\n          </div>\n\n          <div className=\"min-h-[400px]\">\n            {renderContent()}\n          </div>\n        </div>\n      </div>\n    </DashboardLayout>\n  );\n}
