@@ -28,6 +28,11 @@ const WEBHOOK_SUBSCRIPTIONS = [
 
 // --- 4. DATA STORES ---
 let transactions = [];
+let customers = [];
+let balances = {
+    live: {},
+    sandbox: {}
+};
 let products = [
   { id: 'prod_1', name: 'Starter Plan', description: 'Small biz', status: 'active', price: 29.00, currency: 'USD' }
 ];
@@ -149,13 +154,12 @@ async function dispatchWebhooks(event) {
     });
 }
 
-// --- REAL PAYMENT PROCESSING ---
-// No automatic simulation - events are only emitted when real payments happen via API
-
 // --- API ENDPOINTS ---
 
 app.get('/api/events', (req, res) => res.json(EVENT_LOG));
 app.get('/api/transactions', (req, res) => res.json(transactions));
+app.get('/api/customers', (req, res) => res.json(customers));
+app.get('/api/balances', (req, res) => res.json(balances));
 app.get('/api/stats', (req, res) => res.json({ event_count: EVENT_LOG.length, queue_size: NOTIFICATION_QUEUE.length }));
 
 app.post('/api/payout', (req, res) => {
@@ -169,31 +173,58 @@ app.post('/api/payout', (req, res) => {
     res.json(payout);
 });
 
-// Create Payment Intent (Real Payments Only)
+// Create Payment Intent
 app.post('/api/create-payment', (req, res) => {
     const { amount, currency, customer_email, description } = req.body;
+    const isSandbox = req.body.is_sandbox || false;
+    const env = isSandbox ? 'sandbox' : 'live';
     
     const payment = {
         id: `pi_${uuidv4().replace(/-/g, '').substring(0, 24)}`,
         amount: parseFloat(amount),
-        currency: currency || 'USD',
+        currency: (currency || 'USD').toUpperCase(),
         status: 'pending',
         customer_email,
         description,
+        is_sandbox: isSandbox,
         created: new Date().toISOString()
     };
     
     transactions.unshift(payment);
-    if (transactions.length > 100) transactions.pop();
+    if (transactions.length > 500) transactions.pop();
+    
+    // Manage Customer
+    let customer = customers.find(c => c.email === customer_email && c.is_sandbox === isSandbox);
+    if (!customer) {
+        customer = {
+            id: `cus_${uuidv4().replace(/-/g, '').substring(0, 14)}`,
+            email: customer_email,
+            name: customer_email.split('@')[0],
+            created: new Date().toISOString(),
+            is_sandbox: isSandbox,
+            total_spend: 0,
+            currency: currency || 'USD',
+            status: 'active'
+        };
+        customers.unshift(customer);
+    }
     
     emitEvent('payment_intent.created', payment);
     
     // Simulate payment processing (2-5 seconds)
     setTimeout(() => {
-        const isSuccess = Math.random() > 0.05; // 95% success rate for real payments
+        const isSuccess = Math.random() > 0.05; 
         payment.status = isSuccess ? 'succeeded' : 'failed';
         
         if (isSuccess) {
+            // Update customer spend
+            customer.total_spend += payment.amount;
+            
+            // Update balances
+            const curr = payment.currency;
+            if (!balances[env][curr]) balances[env][curr] = 0;
+            balances[env][curr] += payment.amount;
+
             emitEvent('payment_intent.succeeded', payment);
             emitEvent('charge.succeeded', { ...payment, id: `ch_${payment.id.substring(3)}` });
         } else {
@@ -207,5 +238,5 @@ app.post('/api/create-payment', (req, res) => {
 server.listen(PORT, () => {
     console.log(`[GRAPEPAY ENGINE] Event-Driven Architecture Active on port ${PORT}`);
     console.log(`[SYSTEM] SQS Consumer Ready | Email/SMS/Webhook Dispatchers Ready`);
-    console.log(`[PAYMENT] Waiting for real payment requests...`);
+    console.log(`[PAYMENT] Simulator Ready`);
 });

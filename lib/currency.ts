@@ -55,6 +55,39 @@ export const CURRENCY_MAP: { [key: string]: string } = {
   'Kenya': 'KES',
 };
 
+export const EXCHANGE_RATES: { [key: string]: number } = {
+  'USD': 1,
+  'EUR': 0.92,
+  'GBP': 0.79,
+  'JPY': 148.50,
+  'CAD': 1.35,
+  'AUD': 1.52,
+  'CHF': 0.88,
+  'CNY': 7.19,
+  'INR': 83.30,
+  'ZAR': 19.10,
+  'BRL': 4.95,
+  'MXN': 17.10,
+  'SGD': 1.34,
+  'HKD': 7.82,
+  'NZD': 1.63,
+  'BTC': 0.000023, // 1 USD = 0.000023 BTC
+  'ETH': 0.00044,  // 1 USD = 0.00044 ETH
+  'SOL': 0.010,    // 1 USD = 0.010 SOL
+};
+
+export function convertCurrency(amount: number, from: string, to: string): number {
+  if (from === to) return amount;
+  
+  // Convert from source to USD first
+  const rateFrom = EXCHANGE_RATES[from] || 1;
+  const inUSD = amount / rateFrom;
+  
+  // Convert from USD to target
+  const rateTo = EXCHANGE_RATES[to] || 1;
+  return inUSD * rateTo;
+}
+
 // Get currency from user's country
 export function getUserCurrency(country?: string): string {
   if (!country) return 'USD';
@@ -79,16 +112,18 @@ export function formatCurrency(amount: number, currency: string): string {
     'USD': '$',
     'EUR': '€',
     'GBP': '£',
-    'INR': '₹',
     'JPY': '¥',
-    'CNY': '¥',
-    'AUD': 'A$',
     'CAD': 'C$',
-    'SGD': 'S$',
-    'AED': 'د.إ',
-    'SAR': 'ر.س',
+    'AUD': 'A$',
+    'CHF': 'Fr',
+    'CNY': '¥',
+    'INR': '₹',
+    'ZAR': 'R',
     'BRL': 'R$',
-    'MXN': 'Mex$',
+    'MXN': 'MX$',
+    'SGD': 'S$',
+    'HKD': 'HK$',
+    'NZD': 'NZ$',
   };
   
   const symbol = symbols[currency] || currency;
@@ -108,32 +143,54 @@ export function getCurrencySymbol(currency: string): string {
     'USD': '$',
     'EUR': '€',
     'GBP': '£',
-    'INR': '₹',
     'JPY': '¥',
-    'CNY': '¥',
-    'AUD': 'A$',
     'CAD': 'C$',
-    'SGD': 'S$',
-    'AED': 'د.إ',
-    'SAR': 'ر.س',
-    'BRL': 'R$',
-    'MXN': 'Mex$',
+    'AUD': 'A$',
     'CHF': 'Fr',
-    'SEK': 'kr',
-    'NOK': 'kr',
-    'DKK': 'kr',
-    'PLN': 'zł',
+    'CNY': '¥',
+    'INR': '₹',
     'ZAR': 'R',
+    'BRL': 'R$',
+    'MXN': 'MX$',
+    'SGD': 'S$',
     'HKD': 'HK$',
-    'KRW': '₩',
-    'THB': '฿',
-    'IDR': 'Rp',
-    'MYR': 'RM',
-    'PHP': '₱',
-    'VND': '₫',
-    'TRY': '₺',
-    'ILS': '₪',
+    'NZD': 'NZ$',
+    'AED': 'د.إ',
   };
   
   return symbols[currency] || currency;
+}
+
+// Regional Taxation Data (CIT = Corporate Income Tax, VAT = Value Added Tax)
+export const REGIONAL_TAX_DATA: { [key: string]: { CIT: number; VAT: number; surgeFee?: number } } = {
+  'India': { CIT: 18, VAT: 18 }, // 18% CIT as requested by user, 18% GST
+  'United Arab Emirates': { CIT: 0, VAT: 5, surgeFee: 2 }, // Dubai: 0% tax, 2% surge fee for payouts
+  'USA': { CIT: 25.57, VAT: 0 },
+  'United Kingdom': { CIT: 25, VAT: 20 },
+  'Germany': { CIT: 30.06, VAT: 19 },
+  'France': { CIT: 36.13, VAT: 20 },
+  'Japan': { CIT: 30.62, VAT: 10 },
+  'Canada': { CIT: 26.5, VAT: 5 },
+  'Australia': { CIT: 30, VAT: 10 },
+  'Singapore': { CIT: 17, VAT: 9 },
+  'Brazil': { CIT: 34, VAT: 17 },
+  'China': { CIT: 25, VAT: 13 },
+};
+
+export function getTaxRates(region: string) {
+  // Default fallback
+  const fallback = { CIT: 24, VAT: 15 };
+  
+  if (!region) return fallback;
+  
+  // Check direct mapping
+  const data = REGIONAL_TAX_DATA[region];
+  if (data) return data;
+  
+  // Check for partial matches
+  const match = Object.keys(REGIONAL_TAX_DATA).find(key => 
+    region.toLowerCase().includes(key.toLowerCase())
+  );
+  
+  return match ? REGIONAL_TAX_DATA[match] : fallback;
 }

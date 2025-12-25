@@ -51,6 +51,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isConnected, setIsConnected] = useState(false);
+  const [showSandboxBanner, setShowSandboxBanner] = useState(true);
+  const [showTestModeBanner, setShowTestModeBanner] = useState(true);
 
   useEffect(() => {
     // 1. Initial User Load & Welcome Back Logic
@@ -215,28 +217,44 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <div className="flex flex-col h-screen bg-white">
       {/* Sandbox Banner */}
-      {isSandbox && (
+      {isSandbox && showSandboxBanner && (
         <div className="bg-[#00294d] text-white px-4 py-2 text-center text-[13px] font-medium border-b border-[#001f3d]">
           <div className="flex items-center justify-between max-w-[1200px] mx-auto">
              <span className="font-bold uppercase tracking-wider">Sandbox</span>
              <span className="opacity-90">You&apos;re testing in a sandbox. Changes you make here don&apos;t affect your live account.</span>
-             <div className="w-20" /> 
+             <button 
+               onClick={() => {
+                 localStorage.setItem('grapepay_sandbox', 'false');
+                 window.location.reload();
+               }}
+               className="p-1 hover:bg-white/10 rounded transition-colors"
+             >
+               <X size={14} />
+             </button>
           </div>
         </div>
       )}
 
       {/* Test Mode Banner */}
-      {isTestMode && !isSandbox && (
+      {isTestMode && !isSandbox && showTestModeBanner && (
         <div className="bg-[#fff9e6] text-[#856404] px-4 py-1.5 text-center text-[13px] font-medium border-b border-[#ffeeba]">
-          <div className="flex items-center justify-center space-x-2">
-            <AlertTriangle className="h-3.5 w-3.5" />
-            <span>
-              {user.kyc_status === 'pending' 
-                ? 'Your account is in test mode until verification is complete.' 
-                : 'Test Mode - Use test cards to simulate successful and failed payments.'
-              }
-            </span>
-            <button className="underline font-bold ml-2">Activate your account</button>
+          <div className="flex items-center justify-between max-w-[1200px] mx-auto">
+            <div className="flex items-center space-x-2">
+              <AlertTriangle className="h-3.5 w-3.5" />
+              <span>
+                {user.kyc_status === 'pending' 
+                  ? 'Your account is in test mode until verification is complete.' 
+                  : 'Test Mode - Use test cards to simulate successful and failed payments.'
+                }
+              </span>
+              <button className="underline font-bold ml-2">Activate your account</button>
+            </div>
+            <button 
+               onClick={() => setShowTestModeBanner(false)}
+               className="p-1 hover:bg-black/5 rounded transition-colors"
+             >
+               <X size={14} />
+             </button>
           </div>
         </div>
       )}

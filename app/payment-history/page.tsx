@@ -26,6 +26,7 @@ export default function PaymentHistoryPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'succeeded' | 'failed' | 'pending'>('all');
   const [userCurrency, setUserCurrency] = useState('USD');
+  const [isSandbox, setIsSandbox] = useState(false);
 
   useEffect(() => {
     // Get user's currency
@@ -38,8 +39,22 @@ export default function PaymentHistoryPage() {
       } catch (e) {}
     }
 
+    // Check sandbox mode
+    const checkSandbox = () => {
+      const sandboxState = localStorage.getItem('grapepay_sandbox') === 'true';
+      setIsSandbox(sandboxState);
+    };
+    checkSandbox();
+
     // Fetch payment history
     fetchPayments();
+
+    // Poll for changes
+    const interval = setInterval(() => {
+        checkSandbox();
+        fetchPayments();
+    }, 2000);
+    return () => clearInterval(interval);
   }, []);
 
   const fetchPayments = async () => {
@@ -56,6 +71,10 @@ export default function PaymentHistoryPage() {
 
   const filteredPayments = payments
     .filter(p => {
+      // Filter by sandbox mode
+      const paymentIsSandbox = p.is_sandbox === true;
+      if (isSandbox ? !paymentIsSandbox : paymentIsSandbox) return false;
+
       // Filter by status
       if (filterType !== 'all' && p.status !== filterType) return false;
       

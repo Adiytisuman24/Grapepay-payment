@@ -22,6 +22,9 @@ import {
   Tooltip, 
   ResponsiveContainer 
 } from 'recharts';
+import { useEffect, useState } from 'react';
+import { getCurrencySymbol } from '@/lib/currency';
+import { getCurrencyForCountry } from '@/lib/currencies';
 
 const data = [
   { name: 'Jan 2025', value: 0 },
@@ -33,6 +36,23 @@ const data = [
 ];
 
 export default function ConnectOverview() {
+  const [currency, setCurrency] = useState('USD');
+
+  useEffect(() => {
+    const preferred = localStorage.getItem('grapepay_preferred_currency');
+    if (preferred) {
+      setCurrency(preferred);
+    } else {
+      const userData = localStorage.getItem('grapepay_user');
+      if (userData) {
+        const parsed = JSON.parse(userData);
+        if (parsed.region) {
+          setCurrency(getCurrencyForCountry(parsed.region));
+        }
+      }
+    }
+  }, []);
+
   return (
     <DashboardLayout>
       <div className="flex flex-col lg:flex-row min-h-screen bg-white">
@@ -80,14 +100,14 @@ export default function ConnectOverview() {
                     <Info size={14} className="text-slate-300" />
                  </div>
                  <div className="h-[250px] w-full relative">
-                    <div className="absolute right-0 top-0 text-[10px] font-bold text-slate-400">AED 0.01</div>
-                    <div className="absolute right-0 bottom-1/2 text-[10px] font-bold text-slate-400">AED 0</div>
+                    <div className="absolute right-0 top-0 text-[10px] font-bold text-slate-400">{currency} 0.01</div>
+                    <div className="absolute right-0 bottom-1/2 text-[10px] font-bold text-slate-400">{currency} 0</div>
                     <div className="absolute left-0 bottom-0 text-[10px] font-bold text-slate-400">Jan 2025</div>
                     <div className="absolute left-1/3 bottom-0 text-[10px] font-bold text-slate-400 ml-10">May 2025</div>
                     <div className="absolute left-2/3 bottom-0 text-[10px] font-bold text-slate-400 ml-10">Sep 2025</div>
                     
                     <div className="absolute inset-x-0 bottom-6 h-px bg-slate-100 italic flex items-center justify-end">
-                       <span className="text-[10px] text-slate-300 font-bold mr-2">Updated Dec 18, 5:30 PM</span>
+                       <span className="text-[10px] text-slate-300 font-bold mr-2">Updated {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, 5:30 PM</span>
                     </div>
                     
                     <ResponsiveContainer width="100%" height="80%">

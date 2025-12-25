@@ -38,13 +38,15 @@ import {
   Plus,
   Info,
   ExternalLink,
-  Sparkles
+  Sparkles,
+  RefreshCcw
 } from 'lucide-react';
 
 const mainNavigation = [
   { name: 'Home', href: '/', icon: Home },
   { name: 'Balances', href: '/balances', icon: Wallet },
   { name: 'Transactions', href: '/transactions', icon: ArrowLeftRight },
+  { name: 'Conversions', href: '/conversions', icon: RefreshCcw },
   { name: 'Customers', href: '/customers', icon: Users },
   { name: 'Product catalog', href: '/products', icon: ShoppingBag },
   { name: 'Settings', icon: Settings, isPopupTrigger: true },
@@ -81,8 +83,6 @@ const shortcutsNavigation = [
   { name: 'Workflows', href: '/workflows', icon: Activity },
   { name: 'AI CA', href: '/ai-ca', icon: Sparkles },
   { name: 'Tax', href: '/tax', icon: Receipt },
-  { name: 'Test Payment', href: '/test-payment', icon: CreditCard },
-  { name: 'Payment History', href: '/payment-history', icon: Receipt },
 ];
 
 const productsNavigation = [

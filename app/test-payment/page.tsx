@@ -10,6 +10,8 @@ import { toast } from 'sonner';
 import { CreditCard, Loader2, CheckCircle, AlertCircle, Repeat, Calendar } from 'lucide-react';
 import { getUserCurrency } from '@/lib/currency';
 import { cn } from '@/lib/utils';
+import { RecentPayments } from '@/components/dashboard/RecentPayments';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 type PaymentType = 'one_time' | 'recurring' | 'subscription';
 type Interval = 'daily' | 'weekly' | 'monthly' | 'yearly';
@@ -23,6 +25,7 @@ export default function CreatePaymentPage() {
   const [paymentType, setPaymentType] = useState<PaymentType>('one_time');
   const [interval, setInterval] = useState<Interval>('monthly');
   const [billingCycles, setBillingCycles] = useState('');
+  const [sessionLogs, setSessionLogs] = useState<{timestamp: string, message: string}[]>([]);
 
   useEffect(() => {
     const userData = localStorage.getItem('grapepay_user');
@@ -36,6 +39,13 @@ export default function CreatePaymentPage() {
       }
     }
   }, []);
+
+  const addLog = (message: string) => {
+    setSessionLogs(prev => [{
+      timestamp: new Date().toLocaleTimeString(),
+      message
+    }, ...prev]);
+  };
 
   const handleCreatePayment = async () => {
     if (!amount || parseFloat(amount) <= 0) {
@@ -61,7 +71,8 @@ export default function CreatePaymentPage() {
           description: description || 'Payment',
           payment_type: paymentType,
           interval: paymentType !== 'one_time' ? interval : undefined,
-          billing_cycles: billingCycles ? parseInt(billingCycles) : undefined
+          billing_cycles: billingCycles ? parseInt(billingCycles) : undefined,
+          is_sandbox: true
         })
       });
 
@@ -80,10 +91,13 @@ export default function CreatePaymentPage() {
       setDescription('');
       setBillingCycles('');
       
+      addLog(`Success: Created ${typeLabel} (${payment.id})`);
+      
     } catch (error) {
       toast.error('Failed to create payment', {
         description: 'Please make sure the backend is running on port 3001'
       });
+      addLog(`Error: Failed to create payment`);
     } finally {
       setLoading(false);
     }
@@ -261,29 +275,35 @@ export default function CreatePaymentPage() {
           </div>
         </Card>
 
-        <div className="mt-8 bg-blue-50 border border-blue-100 rounded-lg p-6">
-          <h3 className="font-bold text-blue-900 mb-3 flex items-center gap-2">
-            <AlertCircle size={18} />
-            How it works
-          </h3>
-          <ul className="space-y-2 text-sm text-blue-800">
-            <li className="flex items-start gap-2">
-              <CheckCircle size={16} className="mt-0.5 shrink-0" />
-              <span>Your currency is automatically set to <strong>{userCurrency}</strong> based on your region</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <CheckCircle size={16} className="mt-0.5 shrink-0" />
-              <span>Choose between one-time, recurring (fixed duration), or subscription (until cancelled)</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <CheckCircle size={16} className="mt-0.5 shrink-0" />
-              <span>The payment will be processed in 2-5 seconds</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <CheckCircle size={16} className="mt-0.5 shrink-0" />
-              <span>You'll receive a real-time notification when it completes</span>
-            </li>
-          </ul>
+        {/* Payment History and Session Logs */}
+        <div className="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-8">
+           <div className="space-y-6">
+              <RecentPayments limit={5} showViewAll={true} />
+           </div>
+           
+           <div className="space-y-4">
+              <h3 className="text-[14px] font-bold text-slate-700 uppercase tracking-wider">Session Logs</h3>
+              <Card className="border-slate-200 overflow-hidden shadow-sm bg-[#1a1c24] text-slate-300 font-mono text-xs">
+                 <ScrollArea className="h-[300px] p-4">
+                    {sessionLogs.length === 0 ? (
+                       <div className="text-slate-500 italic">Waiting for activity...</div>
+                    ) : (
+                       <div className="space-y-2">
+                          {sessionLogs.map((log, i) => (
+                             <div key={i} className="flex gap-3">
+                                <span className="text-slate-500 shrink-0">[{log.timestamp}]</span>
+                                <span className={cn(
+                                   log.message.startsWith('Success') ? "text-emerald-400" :
+                                   log.message.startsWith('Error') ? "text-red-400" :
+                                   "text-slate-300"
+                                )}>{log.message}</span>
+                             </div>
+                          ))}
+                       </div>
+                    )}
+                 </ScrollArea>
+              </Card>
+           </div>
         </div>
       </div>
     </DashboardLayout>
